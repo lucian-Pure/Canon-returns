@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#CC0000">
+<title>Canon HO Returns</title>
+<style>
+  body { margin: 0; background: #F4F4F4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #333; }
+  .wrap { max-width: 600px; margin: 24px auto; background: #fff; border: 1px solid #dcdcdc; border-radius: 4px; overflow: hidden; }
+  @media (max-width: 640px) { .wrap { margin: 0; border: 0; border-radius: 0; min-height: 100vh; } }
+  .head { background: #CC0000; padding: 20px 24px; color: #fff; }
+  .head h1 { margin: 0; font-size: 20px; }
+  .head p { margin: 4px 0 0; font-size: 11px; color: #FFAAAA; text-transform: uppercase; letter-spacing: 1px; }
+  .body { padding: 24px; line-height: 1.5; }
+  h2 { margin: 0 0 8px; font-size: 18px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 14px; }
+  td { padding: 8px 0; border-bottom: 1px solid #EAEAEA; vertical-align: top; overflow-wrap: anywhere; }
+  td.k { color: #666; font-weight: 600; width: 38%; padding-right: 8px; }
+  .mono { font-family: 'Courier New', Courier, monospace; font-weight: bold; color: #CC0000; }
+  .label { display: block; font-size: 11px; text-transform: uppercase; color: #888; font-weight: bold; }
+  .callout { background: #FAFAFA; border-left: 4px solid #CC0000; padding: 14px 18px; margin: 0 0 20px; border-radius: 0 4px 4px 0; }
+  .callout .status { display: block; font-size: 20px; font-weight: 700; }
+  .callout .sub { display: block; margin-top: 6px; font-size: 14px; color: #555; }
+  .comment { background: #F4F6F9; border-radius: 4px; padding: 14px 18px; margin: 0 0 20px; font-size: 14px; }
+  .comment .label { margin-bottom: 4px; }
+  .pre { white-space: pre-wrap; }
+  .notice { background: #FFF8E5; border: 1px solid #F0D48A; border-radius: 4px; padding: 16px 18px; margin: 0 0 20px; }
+  .notice p { margin: 0 0 12px; font-size: 14px; color: #5C4A1A; }
+  .notice .notice-title { font-weight: 700; color: #7A5200; margin-bottom: 8px; }
+  label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+  input, textarea { width: 100%; box-sizing: border-box; padding: 12px; font-size: 16px; border: 1px solid #bbb; border-radius: 4px; }
+  input { font-family: 'Courier New', Courier, monospace; }
+  textarea { font-family: inherit; resize: vertical; }
+  button.primary { margin-top: 8px; width: 100%; padding: 14px; font-size: 15px; font-weight: 700; color: #fff; background: #CC0000; border: 0; border-radius: 4px; cursor: pointer; }
+  button:disabled { opacity: .6; cursor: default; }
+  .search { display: flex; gap: 8px; margin-top: 16px; }
+  .search input { flex: 1; min-width: 0; }
+  .search button.primary { width: auto; margin-top: 0; padding: 12px 20px; }
+  .msg { min-height: 20px; margin: 10px 0; font-size: 14px; }
+  .err { color: #CC0000; }
+  .ok { color: #1E7B34; font-weight: 600; font-size: 15px; margin: 0; }
+  .card { border: 1px solid #E2E2E2; border-radius: 4px; padding: 12px 14px; margin: 0 0 12px; }
+  .card table { margin: 6px 0 0; }
+  .card td { padding: 6px 0; font-size: 13px; }
+  .card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .badge { color: #fff; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 12px; white-space: nowrap; }
+  .similar { margin: 4px 0 0; font-size: 12px; color: #B26A00; }
+  .small { font-size: 12px; color: #888; margin-top: 16px; }
+  a { color: #CC0000; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head"><h1>Canon</h1><p>HO Returns Management System</p></div>
+  <div class="body" id="app"><p class="msg">Loading...</p></div>
+</div>
+
+<script>
+  // Paste the Apps Script web app URL (ends in /exec) between the quotes:
+  var API_URL = "https://script.google.com/macros/s/AKfycbyWSv3-unThej3yJTw9nsPDa-31kLcjGhHj106-Skn9FlydZ4XU1tY-d9pWW6frP8j5Ow/exec";
+
+  var app = document.getElementById('app');
+  var P = new URLSearchParams(location.search);
+
+  // ---------- helpers ----------
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function clear() { app.innerHTML = ''; }
+  function message(title, text) {
+    clear();
+    app.appendChild(el('h2', null, title));
+    app.appendChild(el('p', null, text));
+  }
+  function fail() { message('Something went wrong', 'Please check your connection and try again in a minute.'); }
+  function setMsg(m, text, isError) { m.textContent = text; m.className = 'msg ' + (isError ? 'err' : ''); }
+  function apiGet(params) {
+    return fetch(API_URL + '?' + new URLSearchParams(params).toString())
+      .then(function (r) { return r.json(); });
+  }
+  function apiPost(body) {
+    // text/plain body keeps this a "simple" request that Apps Script accepts
+    return fetch(API_URL, { method: 'POST', body: JSON.stringify(body) })
+      .then(function (r) { return r.json(); });
+  }
+  function link(text, href) {
+    var a = el('a', null, text);
+    a.href = href;
+    return a;
+  }
+
+  // ---------- status page ----------
+  function showStatus(r, s) {
+    apiGet({ api: 'status', r: r, s: s }).then(function (d) {
+      if (!d.ok) return message(d.title || 'Not available', d.message);
+      clear();
+
+      var c = el('div', 'callout');
+      c.style.borderLeftColor = d.colour;
+      c.appendChild(el('span', 'label', 'Return status'));
+      var st = el('span', 'status', d.status || 'Not yet reviewed');
+      st.style.color = d.colour;
+      c.appendChild(st);
+      if (d.action) c.appendChild(el('span', 'sub', 'Action: ' + d.action + (d.doneOn ? ' (confirmed ' + d.doneOn + ')' : '')));
+      app.appendChild(c);
+
+      if (d.comments) {
+        var cm = el('div', 'comment');
+        cm.appendChild(el('span', 'label', 'Message from Head Office'));
+        cm.appendChild(el('div', 'pre', d.comments));
+        app.appendChild(cm);
+      }
+
+      if (d.isInvalid) app.appendChild(fixBox(r, s));
+      if (d.needsAction) app.appendChild(actionBox(r, s, d.action));
+
+      var tbl = el('table');
+      d.rows.forEach(function (row) {
+        var tr = el('tr');
+        tr.appendChild(el('td', 'k', row[0]));
+        tr.appendChild(el('td', row[2] || '', row[1]));
+        tbl.appendChild(tr);
+      });
+      if (d.photoUrl && /^https?:\/\//i.test(d.photoUrl)) {
+        var tr = el('tr'), td = el('td');
+        tr.appendChild(el('td', 'k', 'Photos'));
+        var a = link('View photos', d.photoUrl);
+        a.target = '_blank';
+        a.rel = 'noopener';
+        td.appendChild(a);
+        tr.appendChild(td);
+        tbl.appendChild(tr);
+      }
+      app.appendChild(tbl);
+
+      var foot = el('p', 'small', 'Questions about this return? Email Head Office at ');
+      foot.appendChild(link(d.contact, 'mailto:' + d.contact));
+      foot.appendChild(document.createTextNode('.'));
+      if (d.lookupUrl) {
+        foot.appendChild(document.createTextNode(' '));
+        foot.appendChild(link('Look up another serial number', d.lookupUrl));
+        foot.appendChild(document.createTextNode('.'));
+      }
+      app.appendChild(foot);
+    }).catch(fail);
+  }
+
+  function submit(btn, msg, inner, label, body) {
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    setMsg(msg, '', false);
+    apiPost(body).then(function (res) {
+      if (res && res.ok) {
+        inner.innerHTML = '';
+        inner.appendChild(el('p', 'ok', res.message));
+      } else {
+        setMsg(msg, res ? res.message : 'Something went wrong. Please try again.', true);
+        btn.disabled = false;
+        btn.textContent = label;
+      }
+    }).catch(function () {
+      setMsg(msg, 'Something went wrong. Please try again.', true);
+      btn.disabled = false;
+      btn.textContent = label;
+    });
+  }
+
+  function fixBox(r, s) {
+    var box = el('div', 'notice');
+    box.appendChild(el('p', 'notice-title', 'Action needed: serial number could not be validated'));
+    box.appendChild(el('p', null, 'Please check the serial number on the device and enter the correct one below. The tracker updates automatically.'));
+    var inner = el('div');
+    var lab = el('label', null, 'Correct serial number');
+    lab.htmlFor = 'serial';
+    var inp = el('input');
+    inp.id = 'serial'; inp.type = 'text'; inp.maxLength = 50; inp.autocomplete = 'off';
+    inp.setAttribute('autocapitalize', 'characters'); inp.spellcheck = false;
+    var msg = el('p', 'msg');
+    var label = 'Submit correction';
+    var btn = el('button', 'primary', label);
+    btn.type = 'button';
+    btn.onclick = function () {
+      var v = inp.value.trim();
+      if (!v) { setMsg(msg, 'Please enter the serial number.', true); return; }
+      submit(btn, msg, inner, label, { api: 'fix', r: r, s: s, serial: v });
+    };
+    inner.appendChild(lab); inner.appendChild(inp); inner.appendChild(msg); inner.appendChild(btn);
+    box.appendChild(inner);
+    return box;
+  }
+
+  function actionBox(r, s, action) {
+    var box = el('div', 'notice');
+    box.appendChild(el('p', 'notice-title', 'Action needed: ' + action));
+    box.appendChild(el('p', null, "Once you've completed this, please confirm it here so Head Office knows."));
+    var inner = el('div');
+    var lab = el('label', null, 'Note for Head Office (optional)');
+    lab.htmlFor = 'actNote';
+    var ta = el('textarea');
+    ta.id = 'actNote'; ta.maxLength = 500; ta.rows = 3;
+    var msg = el('p', 'msg');
+    var label = 'Confirm ' + action + ' completed';
+    var btn = el('button', 'primary', label);
+    btn.type = 'button';
+    btn.onclick = function () {
+      submit(btn, msg, inner, label, { api: 'confirm', r: r, s: s, note: ta.value.trim() });
+    };
+    inner.appendChild(lab); inner.appendChild(ta); inner.appendChild(msg); inner.appendChild(btn);
+    box.appendChild(inner);
+    return box;
+  }
+
+  // ---------- serial lookup ----------
+  function showLookup(k) {
+    apiGet({ api: 'lookupInit', k: k }).then(function (d) {
+      if (!d.ok) return message(d.title || 'Link not valid', d.message);
+      clear();
+      app.appendChild(el('h2', null, 'Serial number lookup'));
+      app.appendChild(el('p', null, 'Check whether a device has already been captured at any store, and what happened to it.'));
+      var row = el('div', 'search');
+      var q = el('input');
+      q.type = 'text'; q.maxLength = 50; q.placeholder = 'Serial number'; q.autocomplete = 'off';
+      q.setAttribute('autocapitalize', 'characters'); q.spellcheck = false;
+      var go = el('button', 'primary', 'Search');
+      go.type = 'button';
+      row.appendChild(q); row.appendChild(go);
+      app.appendChild(row);
+      var msg = el('p', 'msg');
+      var results = el('div');
+      app.appendChild(msg);
+      app.appendChild(results);
+      app.appendChild(el('p', 'small', 'Hi ' + d.name + ". This link is personal to you, so please don't share it."));
+
+      function search() {
+        var text = q.value.trim();
+        if (!text) { setMsg(msg, 'Please enter a serial number.', true); return; }
+        go.disabled = true;
+        setMsg(msg, 'Searching...', false);
+        results.innerHTML = '';
+        apiGet({ api: 'lookup', k: k, q: text }).then(function (res) {
+          go.disabled = false;
+          renderResults(res, msg, results);
+        }).catch(function () {
+          go.disabled = false;
+          setMsg(msg, 'Something went wrong. Please try again.', true);
+        });
+      }
+      go.onclick = search;
+      q.addEventListener('keydown', function (e) { if (e.key === 'Enter') search(); });
+      q.focus();
+    }).catch(fail);
+  }
+
+  function renderResults(res, msg, box) {
+    if (!res || !res.ok) { setMsg(msg, res ? res.message : 'Something went wrong.', true); return; }
+    if (!res.results.length) { setMsg(msg, 'No returns found for that serial number. It has not been captured before.', false); return; }
+    setMsg(msg, res.more
+      ? 'Showing the first ' + res.results.length + ' matches. Type more of the serial number to narrow it down.'
+      : res.results.length + (res.results.length === 1 ? ' return found' : ' returns found') +
+        (res.anySimilar ? ' (including partial matches)' : '') + '.', false);
+    res.results.forEach(function (r) {
+      var card = el('div', 'card');
+      var head = el('div', 'card-head');
+      head.appendChild(el('span', 'mono', r.serial));
+      var badge = el('span', 'badge', r.status || 'Not yet reviewed');
+      badge.style.background = r.colour;
+      head.appendChild(badge);
+      card.appendChild(head);
+      if (r.similar) card.appendChild(el('p', 'similar', 'Partial match'));
+      var t = el('table');
+      [['Captured', r.date], ['Store', r.store], ['Province', r.province], ['Rep', r.rep],
+       ['Device model', r.device], ['Action', r.action], ['Credit reference', r.creditRef],
+       ['Fault', r.fault]].forEach(function (f) {
+        if (!f[1]) return;
+        var tr = el('tr');
+        tr.appendChild(el('td', 'k', f[0]));
+        tr.appendChild(el('td', '', f[1]));
+        t.appendChild(tr);
+      });
+      card.appendChild(t);
+      box.appendChild(card);
+    });
+  }
+
+  // ---------- manager follow-ups ----------
+  function showManager(k) {
+    apiGet({ api: 'manager', k: k }).then(function (d) {
+      if (!d.ok) return message(d.title || 'Link not valid', d.message);
+      clear();
+      app.appendChild(el('h2', null, 'Rep follow-ups'));
+      app.appendChild(el('p', null, 'Returns waiting on a rep, longest first. Updated live from the tracker (' + d.updated + ').'));
+      if (!d.groups.length) {
+        app.appendChild(el('p', 'ok', 'Nothing outstanding. All reps are up to date.'));
+      }
+      d.groups.forEach(function (g) {
+        var card = el('div', 'card');
+        var head = el('div', 'card-head');
+        head.appendChild(el('strong', null, g.rep));
+        var badge = el('span', 'badge', g.items.length + ' open');
+        badge.style.background = g.max >= 7 ? '#CC0000' : g.max >= 3 ? '#B26A00' : '#777777';
+        head.appendChild(badge);
+        card.appendChild(head);
+        var t = el('table');
+        g.items.forEach(function (x) {
+          var tr = el('tr');
+          var left = el('td', 'k', x.store);
+          left.appendChild(document.createElement('br'));
+          left.appendChild(el('span', 'mono', x.serial));
+          var right = el('td', null, x.task);
+          right.appendChild(document.createElement('br'));
+          right.appendChild(el('span', 'small', x.days + ' day' + (x.days === 1 ? '' : 's') + ' waiting' +
+            (x.handledBy ? ' · HO: ' + x.handledBy : '')));
+          tr.appendChild(left); tr.appendChild(right);
+          t.appendChild(tr);
+        });
+        card.appendChild(t);
+        app.appendChild(card);
+      });
+      app.appendChild(el('p', 'small', 'Hi ' + d.name.split(' ')[0] + ". This link is personal to you, so please don't share it."));
+    }).catch(fail);
+  }
+
+  // ---------- route ----------
+  if (API_URL.indexOf('/exec') === -1) {
+    message('Setup needed', 'Paste the Apps Script web app URL into API_URL at the top of this page.');
+  } else if (P.get('page') === 'lookup') {
+    showLookup(P.get('k') || '');
+  } else if (P.get('page') === 'manager') {
+    showManager(P.get('k') || '');
+  } else if (P.get('r')) {
+    showStatus(P.get('r'), P.get('s') || '');
+  } else {
+    message('Link not recognised', 'Please use the link from your email, or ask Head Office for your lookup link.');
+  }
+</script>
+</body>
+</html>
